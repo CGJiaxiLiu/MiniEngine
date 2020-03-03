@@ -1,6 +1,8 @@
 # MiniEngine
 A minimal C++ 2d game engine, created as I am learning DirectX, PhysX and game engine.
 
+![gif](/screenshot.gif)
+
 ##
 Some fundamental functionality of a game engine, i.e. graphics, physics and game logic.
  - DirectX Management
