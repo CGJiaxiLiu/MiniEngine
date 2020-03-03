@@ -1,5 +1,5 @@
 # MiniEngine
-A minimal C++ 2d game engine 
+A minimal C++ 2d game engine, created as I am learning DirectX, PhysX and game engine.
 
 ##
 Some fundamental functionality of a game engine, i.e. graphics, physics and game logic.
@@ -12,3 +12,5 @@ External Dependent:
  - DirectX SDK
  - PhysX SDK
  
+## Acknowledgment
+Thanks to [Rastertek](http://www.rastertek.com/tutdx11.html), a comprehensive and step-by-step DirectX 11 tutorial.
