@@ -5,9 +5,22 @@ A minimal C++ 2d game engine, created as I am learning DirectX, PhysX and game e
 
 ##
 Some fundamental functionality of a game engine, i.e. graphics, physics and game logic.
- - DirectX Management
- - Physics Integration
+ - Graphics Management
+  - DirectX initialization
+  - Buffer and shader
+ - Physics engine integration
+  - PhysX initialization
+  - Scene and physics synchronization
  - Game Framework
+  - class design
+
+## 
+Some feature todo:
+ - Texture
+ - 2D lighting
+ - User input
+ - UI framework
+ - Auto navigation
 
 ## 
 External Dependent:
