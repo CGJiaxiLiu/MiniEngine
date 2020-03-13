@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include "GraphicsManager.h"
 #include "World.h"
 #include "Actor.h"
@@ -33,7 +34,7 @@ bool World::Initialize(class Application* inApp)
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true);
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
-	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
+	sceneDesc.gravity = PxVec3(0.0f, -15.0f, 0.0f);
 	gDispatcher = PxDefaultCpuDispatcherCreate(2);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
@@ -59,9 +60,12 @@ bool World::Initialize(class Application* inApp)
 		body->setMaxDepenetrationVelocity(0.1);
 		PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 		gScene->addActor(*body);
-		body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+		//body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+		//body->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
+		body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+		body->setMaxDepenetrationVelocity(PX_MAX_F32);
 		actor0->physicsProxy = body;
-		body->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
+		body->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
 		mouse = actor0;
 	}
 	else
@@ -80,7 +84,7 @@ bool World::Initialize(class Application* inApp)
 	gScene->addActor(*static_body);
 	actor1->physicsProxy = static_body;
 	static_body->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
-	static_body->setMaxDepenetrationVelocity(0.1);
+	static_body->setMaxDepenetrationVelocity(PX_MAX_F32);
 
 	std::shared_ptr<Actor> floor = std::make_shared<Actor>();
 	this->AddActor(floor);
@@ -90,7 +94,7 @@ bool World::Initialize(class Application* inApp)
 
 	std::shared_ptr<Geometry> floorGeo = std::make_shared<Geometry>();
 	float halfFloorWidth = 5.0f;
-	float halfFloorHeigh = 0.1f;
+	float halfFloorHeigh = 0.5f;
 	floorGeo->positionData = std::vector<XMFLOAT3>{
 		XMFLOAT3(-halfFloorWidth, -halfFloorHeigh, 0.0f),
 		XMFLOAT3(-halfFloorWidth, halfFloorHeigh, 0.0f),
@@ -107,6 +111,7 @@ bool World::Initialize(class Application* inApp)
 	floorPhy->attachShape(*floorShape);
 	floor->physicsProxy = floorPhy;
 
+
 	boxShape->release();
 	floorShape->release();
 	return true;
@@ -121,6 +126,11 @@ void World::Destroy()
 	PX_RELEASE(gFoundation);
 }
 
+void World::StepPhysics(double DeltaTime)
+{
+
+}
+
 void World::Tick(double DeltaTime)
 {
 	if (gScene)
@@ -129,6 +139,22 @@ void World::Tick(double DeltaTime)
 		gScene->fetchResults(true);
 	}
 
+	if (app->GetKeyDown(VK_UP))
+	{
+		LOG(L"Frame: %zd, (UP) KEY DOWN", app->GetFrameCount());
+	}
+	if (app->GetKeyUp(VK_UP))
+	{
+		LOG(L"Frame: %zd, (UP) KEY UP", app->GetFrameCount());
+	}
+	if (app->GetKeyDown(VK_DOWN))
+	{
+		LOG(L"Frame: %zd, (DOWN) KEY DOWN", app->GetFrameCount());
+	}
+	if (app->GetKeyUp(VK_DOWN))
+	{
+		LOG(L"Frame: %zd, (DOWN) KEY UP", app->GetFrameCount());
+	}
 
 	for (auto actor : this->ActorList)
 	{
@@ -144,20 +170,43 @@ void World::Tick(double DeltaTime)
 			XMMATRIX rotation = XMMatrixRotationZ(axis.z >= 0 ? angle : -angle);
 
 			actor->transformation = rotation * translation;
-			app->LogOnConsole(L"position: x %f, y %f", physics_pos.x, physics_pos.y);
-			app->LogOnConsole(L"rot angle: %f", angle);
+			//app->LogOnConsole(L"position: x %f, y %f", physics_pos.x, physics_pos.y);
+			//app->LogOnConsole(L"rot angle: %f", angle);
 		}
 	}
-
+	
 	if (mouse && mouse->physicsProxy)
 	{
 		mouse->actorRenderData.color = XMFLOAT4(0.0f, 1.0f, 1.0f, 0.0f);
 		auto pos = app->GetCursorPosition();
 		auto pos_ = app->GetGraphicsManager()->ScreenToWorld(pos.x, pos.y);
 		PxRigidDynamic* body = static_cast<PxRigidDynamic*>(mouse->physicsProxy);
+
 		if (body)
 		{
-			body->setKinematicTarget(PxTransform(pos_.x, pos_.y, 0));
+			//body->setKinematicTarget(PxTransform(pos_.x, pos_.y, 0));
+			//body->setGlobalPose(PxTransform(pos_.x, pos_.y, 0));
+			auto currPos = body->getGlobalPose().p;
+			float speed = 5.0f;
+
+			if (app->GetKeyPressed(VK_UP))
+			{
+				currPos.y += speed * DeltaTime;
+			}
+			if (app->GetKeyPressed(VK_DOWN))
+			{
+				currPos.y -= speed * DeltaTime;
+			}
+			if (app->GetKeyPressed(VK_RIGHT))
+			{
+				currPos.x += speed * DeltaTime;
+			}
+			if (app->GetKeyPressed(VK_LEFT))
+			{
+				currPos.x -= speed * DeltaTime;
+			}
+			body->setGlobalPose(PxTransform(currPos));
+			body->setLinearVelocity(PxVec3(0.0f, 0.0f, 0.0f));
 		}
 	}
 

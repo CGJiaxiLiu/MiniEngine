@@ -27,6 +27,10 @@ public:
 	std::shared_ptr<class GraphicsManager> GetGraphicsManager() { return m_graphicsManager; }
 	POINT GetCursorPositionPixel();
 	DirectX::XMFLOAT2 GetCursorPosition();
+	inline size_t GetFrameCount() { return this->m_frameCount; }
+	bool GetKeyDown(WPARAM index);
+	bool GetKeyUp(WPARAM index);
+	bool GetKeyPressed(WPARAM index);
 
 protected:
 	void CreateMainViewport();
@@ -36,7 +40,7 @@ protected:
 	double m_frameLength = 0.0;
 	unsigned int m_screenWidth = 800;
 	unsigned int m_screenHeight = 600;
-	unsigned long long m_frameCount = 0;
+	size_t m_frameCount = 0;
 	float screenRatio = 100;
 
 	std::chrono::system_clock::time_point timePoint_a;

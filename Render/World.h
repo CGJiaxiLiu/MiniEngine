@@ -14,6 +14,7 @@ class World
 public:
 	bool Initialize(class Application* inApp);
 	void Destroy();
+	void StepPhysics(double DeltaTime);
 	void Tick(double DeltaTime);
 
 	void AddActor(std::shared_ptr<Actor> inActor);

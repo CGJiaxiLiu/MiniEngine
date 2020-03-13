@@ -63,15 +63,43 @@ LRESULT Viewport::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 				PostQuitMessage(0);
 				return 0;
 			}
-			else if (umsg == WM_KEYDOWN) {
-				if (wparam == VK_ESCAPE) {
-					viewport->CalledToDestroy();
-					return 0;
+			if (umsg == WM_KEYDOWN && wparam == VK_ESCAPE)
+			{
+				viewport->CalledToDestroy();
+				return 0;
+			}
+
+			if (wparam < viewport->keyCount)
+			{
+				if (umsg == WM_KEYDOWN)
+				{
+					if (!viewport->m_keyPressed[wparam])
+					{
+						viewport->m_keyDown[wparam] = true;
+						viewport->m_keyPressed[wparam] = true;
+					}
+				}
+				else if (umsg == WM_KEYUP)
+				{
+					if (viewport->m_keyPressed[wparam])
+					{
+						viewport->m_keyUp[wparam] = true;
+						viewport->m_keyPressed[wparam] = false;
+					}
 				}
 			}
 		}
 	}
 	return DefWindowProc(hwnd, umsg, wparam, lparam);
+}
+
+void Viewport::resetKetAction()
+{
+	for (int i = 0; i < this->keyCount; i++)
+	{
+		m_keyDown[i] = false;
+		m_keyUp[i] = false;
+	}
 }
 
 void Viewport::InitializeWindow(unsigned int inWidth, unsigned int inHeight)

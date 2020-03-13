@@ -61,7 +61,7 @@ void Application::MainLoop()
 	}
 }
 
-void Application::Destroy()
+void Application:: Destroy()
 {
 	instance = nullptr;
 
@@ -82,8 +82,10 @@ void Application::Destroy()
 void Application::Tick(double DeltaTime)
 {
 	m_mainViewport->Execute(DeltaTime);
-	m_world->Tick(DeltaTime);
+	m_world->StepPhysics(DeltaTime);
 	m_graphicsManager->Render();
+	m_world->Tick(DeltaTime);
+	m_mainViewport->resetKetAction();
 	//LOG(L"Frame: %d", this->m_frameCount);
 }
 
@@ -102,6 +104,23 @@ DirectX::XMFLOAT2 Application::GetCursorPosition()
 	POINT p = this->GetCursorPositionPixel();
 	return DirectX::XMFLOAT2(2 * ((float)p.x / m_screenWidth - 0.5f), - 2 * ((float)p.y / m_screenHeight - 0.5));
 }
+
+bool Application::GetKeyDown(WPARAM index)
+{
+	return m_mainViewport->GetKeyDown(index);
+}
+
+bool Application::GetKeyUp(WPARAM index)
+{
+	return m_mainViewport->GetKeyUp(index);
+}
+
+bool Application::GetKeyPressed(WPARAM index)
+{
+	return m_mainViewport->GetKeyPressed(index);
+}
+
+
 
 void Application::CreateMainViewport()
 {
