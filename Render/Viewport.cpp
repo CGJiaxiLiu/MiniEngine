@@ -48,6 +48,7 @@ void Viewport::Execute(double DeltaTime)
 
 void Viewport::Tick(double DeltaTime)
 {
+	
 }
 
 void Viewport::Destroy()
@@ -69,36 +70,50 @@ LRESULT Viewport::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 				return 0;
 			}
 
+			int staged = viewport->stagedBufferIndex;
+			if (viewport->readLocked)
+			{
+				staged = 1 - staged;
+				viewport->needSwapBuffer = true;
+			}
+
 			if (wparam < viewport->keyCount)
 			{
-				if (umsg == WM_KEYDOWN)
+				if (umsg == WM_KEYDOWN && !viewport->m_keyPressedLatframe[wparam][staged])
 				{
-					if (!viewport->m_keyPressed[wparam])
-					{
-						viewport->m_keyDown[wparam] = true;
-						viewport->m_keyPressed[wparam] = true;
-					}
+					viewport->m_keyDown[wparam][staged] = true;
+					viewport->m_keyPressedLatframe[wparam][staged] = true;
 				}
-				else if (umsg == WM_KEYUP)
+				else if (umsg == WM_KEYUP && viewport->m_keyPressedLatframe[wparam][staged])
 				{
-					if (viewport->m_keyPressed[wparam])
-					{
-						viewport->m_keyUp[wparam] = true;
-						viewport->m_keyPressed[wparam] = false;
-					}
+					viewport->m_keyUp[wparam][staged] = true;
 				}
 			}
 		}
 	}
+
 	return DefWindowProc(hwnd, umsg, wparam, lparam);
 }
 
-void Viewport::resetKetAction()
+void Viewport::resetKetAction(int index)
 {
 	for (int i = 0; i < this->keyCount; i++)
 	{
-		m_keyDown[i] = false;
-		m_keyUp[i] = false;
+		m_keyDown[i][index] = false;
+		m_keyUp[i][index] = false;
+		m_keyPressedLatframe[i][index] = false;
+	}
+}
+
+void Viewport::unlockRead()
+{
+	readLocked = false;
+	resetKetAction(stagedBufferIndex);
+
+	if (needSwapBuffer)
+	{
+		stagedBufferIndex = 1 - stagedBufferIndex;
+		needSwapBuffer = false;
 	}
 }
 

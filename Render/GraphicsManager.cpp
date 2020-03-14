@@ -24,8 +24,8 @@ bool GraphicsManager::Initialize(Application* inApp, std::shared_ptr<class Viewp
 	result = m_D3D->Initialize(inViewport);
 	if (!result) {
 		LOG(L"D3D Initialize Fail");
+		BOX(L"D3D Initialize Fail", L"Error");
 		return false;
-
 	}
 	else {
 		LOG(L"D3D Initialize Success");
@@ -34,6 +34,7 @@ bool GraphicsManager::Initialize(Application* inApp, std::shared_ptr<class Viewp
 	m_model = std::make_shared<PolygonModel>();
 	result = m_model->Initialize(m_D3D->GetDevice(), this->app->GetWorld());
 	if (!result) {
+		BOX(L"Model Initialize Fail", L"Error");
 		return false;
 	}
 	else {
@@ -43,6 +44,7 @@ bool GraphicsManager::Initialize(Application* inApp, std::shared_ptr<class Viewp
 	m_shaderManager = std::make_shared<ShaderManager>();
 	result = m_shaderManager->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), m_viewport->GetWindowHandle());
 	if (!result) {
+		BOX(L"Shader Manager Initialize Fail", L"Error");
 		return false;
 	}
 	else {
@@ -58,6 +60,17 @@ void GraphicsManager::Render()
 	m_model->Update(m_D3D->GetDeviceContext());
 
 	m_viewMatrix = XMMatrixIdentity();
+
+	if (this->app && this->app->GetWorld() && this->app->GetWorld()->player)
+	{
+		XMVECTOR outTrans = XMVECTOR();
+		XMVECTOR null_0 = XMVECTOR();
+		XMVECTOR null_1 = XMVECTOR();
+		XMMatrixDecompose(&null_0, &null_1, &outTrans, this->app->GetWorld()->player->transformation);
+		m_viewMatrix = XMMatrixTranslation(-XMVectorGetX(outTrans), -XMVectorGetY(outTrans), 0);
+		m_viewMatrix = XMMatrixTranspose(m_viewMatrix);
+	}
+
 	float ratio = 0.02f;
 	m_projectionMatrix = XMMatrixOrthographicLH(ratio * app->GetScreenWidth(), ratio * app->GetScreenHeight(), 0.0f, 100.0f);
 
@@ -76,13 +89,12 @@ void GraphicsManager::Render()
 		UINT indexCount = actor->geo->indexData.size();
 		UINT startIndexLocation = 0;
 		INT startVertexLocation = actor->geo->vertexOffset;
-		ShaderManager::MatrixBufferType buffer;
+		ShaderManager::VSConstBuffer buffer;
 		buffer.world = worldMatrix;
 		buffer.view = m_viewMatrix;
 		buffer.projection = m_projectionMatrix;
 		buffer.color = actor->actorRenderData.color;
-		//m_shaderManager->SetMatrix(worldMatrix, m_viewMatrix, m_projectionMatrix);
-		m_shaderManager->SetConstBuffer(&buffer);
+		m_shaderManager->SetVSConstBuffer(&buffer);
 		m_shaderManager->Render(indexCount, startIndexLocation, startVertexLocation);
 	}
 	

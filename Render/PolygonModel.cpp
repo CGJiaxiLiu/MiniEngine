@@ -10,16 +10,8 @@ PolygonModel::PolygonModel()
 
 bool PolygonModel::Initialize(ID3D11Device * device, std::shared_ptr<World> world)
 {
-	bool result;
-
 	// Initialize the vertex and index buffer that hold the geometry for the triangle.
-	result = InitializeBuffer(device, world);
-	if (!result)
-	{
-		return false;
-	}
-
-	return true;
+	return InitializeBuffer(device, world);
 }
 
 void PolygonModel::Destroy()
@@ -59,7 +51,9 @@ bool PolygonModel::InitializeBuffer(ID3D11Device * device, std::shared_ptr<World
 		{
 			VertexType temp = VertexType();
 			temp.position = vec;
-			temp.intensity = 1.0f;
+			temp.padding = 0.0f;
+			temp.uv = XMFLOAT2(0.0f, 0.0f);
+			temp.padding_2 = XMFLOAT2(0.0f, 0.0f);
 			vectexArr.push_back(temp);
 		}
 
@@ -114,6 +108,7 @@ bool PolygonModel::InitializeBuffer(ID3D11Device * device, std::shared_ptr<World
 	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Polygon Model Error 0");
 		return false;
 	}
 
@@ -134,6 +129,7 @@ bool PolygonModel::InitializeBuffer(ID3D11Device * device, std::shared_ptr<World
 	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Polygon Model Error 1");
 		return false;
 	}
 

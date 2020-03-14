@@ -8,6 +8,8 @@
 #define BOX(a, b) _AriseMessageBox(a, b);
 #define D3DErrorParse(result) DXGetErrorDescription(result)
 #define PX_RELEASE(x)	if(x)	{ x->release(); x = NULL;	}
+#define DX_RELEASE(x)	if(x)	{ x->Release(); x = nullptr;	}
+
 
 void _Log(const wchar_t* Format, ...);
 float _RunTime();

@@ -23,13 +23,12 @@ public:
 	size_t GetVertexSize();
 	size_t GetIndexSize();
 	std::vector<std::shared_ptr<Geometry>> GetGeometryData() { return GeometryList; }
-	//void StepPhysics(double DeltaTime);
+	std::shared_ptr<Actor> player = nullptr;
 
 protected:
 	class Application* app;
 	std::vector<std::shared_ptr<Actor>> ActorList;
 	std::vector<std::shared_ptr<Geometry>> GeometryList;
 	//XMFLOAT3 GetMouseWorldLocation();
-	std::shared_ptr<Actor> mouse = nullptr;
 };
 

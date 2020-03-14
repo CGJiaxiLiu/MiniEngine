@@ -66,7 +66,7 @@ bool World::Initialize(class Application* inApp)
 		body->setMaxDepenetrationVelocity(PX_MAX_F32);
 		actor0->physicsProxy = body;
 		body->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
-		mouse = actor0;
+		player = actor0;
 	}
 	else
 	{
@@ -175,12 +175,12 @@ void World::Tick(double DeltaTime)
 		}
 	}
 	
-	if (mouse && mouse->physicsProxy)
+	if (player && player->physicsProxy)
 	{
-		mouse->actorRenderData.color = XMFLOAT4(0.0f, 1.0f, 1.0f, 0.0f);
+		player->actorRenderData.color = XMFLOAT4(0.0f, 1.0f, 1.0f, 0.0f);
 		auto pos = app->GetCursorPosition();
 		auto pos_ = app->GetGraphicsManager()->ScreenToWorld(pos.x, pos.y);
-		PxRigidDynamic* body = static_cast<PxRigidDynamic*>(mouse->physicsProxy);
+		PxRigidDynamic* body = static_cast<PxRigidDynamic*>(player->physicsProxy);
 
 		if (body)
 		{

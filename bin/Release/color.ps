@@ -1,16 +1,19 @@
+Texture2DArray TextureArray;
+SamplerState SampleType;
+
 cbuffer ParaBuffer
 {
-	float Intensity;
+	int index;
 };
 
 struct PixelInputType
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+	float2 tex : TEXCOORD0;
 };
 
 float4 ColorPixelShader(PixelInputType input) : SV_TARGET
 {
-	return input.color;
+	return TextureArray.Sample(SampleType, float3(input.tex.x, input.tex.y, index));
 }
-

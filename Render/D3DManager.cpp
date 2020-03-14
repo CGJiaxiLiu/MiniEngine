@@ -87,6 +87,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -94,6 +95,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -123,6 +125,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateTexture2D(&customBufferDesc, NULL, &m_customBuffer);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -147,6 +150,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -177,6 +181,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -197,6 +202,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 
@@ -220,6 +226,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Error");
 		return false;
 	}
 

@@ -25,90 +25,66 @@ void ShaderManager::Destroy()
 	DestroyShader();
 }
 
-bool ShaderManager::SetMatrix(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix)
+bool ShaderManager::SetVSConstBuffer(VSConstBuffer* inData)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	ParaBufferType* dataPtr2;
+	VSConstBuffer* dataPtr;
 	unsigned int bufferNumber;
 
 	// Lock the constant buffer so it can be written to.
-	result = this->m_context->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = this->m_context->Map(m_VSConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
 	// Get a pointer to the data in the constant buffer.
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
-
-	// Copy the matrices into the constant buffer.
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
+	dataPtr = (VSConstBuffer*)mappedResource.pData;
+	memcpy(dataPtr, inData, sizeof(VSConstBuffer));
 
 	// Unlock the constant buffer.
-	this->m_context->Unmap(m_matrixBuffer, 0);
+	this->m_context->Unmap(m_VSConstBuffer, 0);
 
 	// Set the position of the constant buffer in the vertex shader.
 	bufferNumber = 0;
 
 	// Finanly set the constant buffer in the vertex shader with the updated values.
-	this->m_context->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	this->m_context->VSSetConstantBuffers(bufferNumber, 1, &m_VSConstBuffer);
 
-	result = this->m_context->Map(m_ParaBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	return true;
 }
 
-bool ShaderManager::SetConstBuffer(MatrixBufferType* inData)
+bool ShaderManager::SetPSConstBuffer(PSConstBuffer * inData)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	ParaBufferType* dataPtr2;
+	PSConstBuffer* dataPtr;
 	unsigned int bufferNumber;
 
-	// Lock the constant buffer so it can be written to.
-	result = this->m_context->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	result = this->m_context->Map(m_PSConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
 		return false;
 	}
 
-	// Get a pointer to the data in the constant buffer.
-	dataPtr = (MatrixBufferType*)mappedResource.pData;
-	memcpy(dataPtr, inData, sizeof(MatrixBufferType));
+	dataPtr = (PSConstBuffer*)mappedResource.pData;
+	memcpy(dataPtr, inData, sizeof(PSConstBuffer));
 
-	// Unlock the constant buffer.
-	this->m_context->Unmap(m_matrixBuffer, 0);
+	this->m_context->Unmap(m_PSConstBuffer, 0);
 
-	// Set the position of the constant buffer in the vertex shader.
+	// Set the position of the light constant buffer in the pixel shader.
 	bufferNumber = 0;
 
-	// Finanly set the constant buffer in the vertex shader with the updated values.
-	this->m_context->VSSetConstantBuffers(bufferNumber, 1, &m_matrixBuffer);
+	// Finally set the light constant buffer in the pixel shader with the updated values.
+	this->m_context->PSSetConstantBuffers(bufferNumber, 1, &m_PSConstBuffer);
 
-	result = this->m_context->Map(m_ParaBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	return true;
 }
 
 bool ShaderManager::Render(UINT indexCount, UINT startIndex, INT startVertex)
 {
 	bool result;
-
-	// Set the shader parameters that it will use for rendering.
-	//result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, h, v);
-	//if (!result)
-	//{
-	//	return false;
-	//}
 
 	// Now render the prepared buffers with the shader.
 	Draw(indexCount, startIndex, startVertex);
@@ -175,6 +151,7 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Shader Manager Error 0");
 		return false;
 	}
 
@@ -182,6 +159,7 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Shader Manager Error 1");
 		return false;
 	}
 
@@ -195,9 +173,9 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
 
-	polygonLayout[1].SemanticName = "INTENSITY";
+	polygonLayout[1].SemanticName = "TEXCOORD";
 	polygonLayout[1].SemanticIndex = 0;
-	polygonLayout[1].Format = DXGI_FORMAT_R32_FLOAT;
+	polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	polygonLayout[1].InputSlot = 0;
 	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -212,6 +190,7 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Shader Manager Error 2");
 		return false;
 	}
 
@@ -224,30 +203,31 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.ByteWidth = sizeof(VSConstBuffer);
 	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	matrixBufferDesc.MiscFlags = 0;
 	matrixBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_matrixBuffer);
+	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_VSConstBuffer);
 	if (FAILED(result))
 	{
+		BOX(D3DErrorParse(result), L"Shader Manager Error 3");
 		return false;
 	}
 
 	paraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	paraBufferDesc.ByteWidth = sizeof(ParaBufferType);
+	paraBufferDesc.ByteWidth = sizeof(PSConstBuffer);
 	paraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	paraBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	paraBufferDesc.MiscFlags = 0;
 	paraBufferDesc.StructureByteStride = 0;
 
-	result = device->CreateBuffer(&paraBufferDesc, NULL, &m_ParaBuffer);
+	result = device->CreateBuffer(&paraBufferDesc, NULL, &m_PSConstBuffer);
 	if (FAILED(result))
 	{
-		BOX(D3DErrorParse(result), L"ParaBufferError");
+		BOX(D3DErrorParse(result), L"Shader Manager Error 4");
 		return false;
 	}
 
@@ -257,16 +237,16 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 void ShaderManager::DestroyShader()
 {
 	// Release the matrix constant buffer.
-	if (m_matrixBuffer)
+	if (m_VSConstBuffer)
 	{
-		m_matrixBuffer->Release();
-		m_matrixBuffer = 0;
+		m_VSConstBuffer->Release();
+		m_VSConstBuffer = 0;
 	}
 
-	if (m_ParaBuffer)
+	if (m_PSConstBuffer)
 	{
-		m_ParaBuffer->Release();
-		m_ParaBuffer = 0;
+		m_PSConstBuffer->Release();
+		m_PSConstBuffer = 0;
 	}
 
 	// Release the layout.
@@ -324,13 +304,27 @@ void ShaderManager::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd
 	MessageBox(hwnd, L"Error compiling shader.  Check shader-error.txt for message.", shaderFilename, MB_OK);
 }
 
-bool ShaderManager::SetShaderParameters()
+void ShaderManager::Draw(UINT indexCount, UINT startIndex, INT startVertex)
 {
-	HRESULT result;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr;
-	ParaBufferType* dataPtr2;
-	unsigned int bufferNumber;
+	// Set the vertex input layout.
+	this->m_context->IASetInputLayout(m_layout);
+
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	this->m_context->VSSetShader(m_vertexShader, NULL, 0);
+	this->m_context->PSSetShader(m_pixelShader, NULL, 0);
+
+	// Render the triangle.
+	this->m_context->DrawIndexed(indexCount, startIndex, startVertex);
+	return;
+}
+
+//bool ShaderManager::SetShaderParameters()
+//{
+	//HRESULT result;
+	//D3D11_MAPPED_SUBRESOURCE mappedResource;
+	//VSConstBuffer* dataPtr;
+	//PSConstBuffer* dataPtr2;
+	//unsigned int bufferNumber;
 
 	//// Transpose the matrices to prepare them for the shader.
 	//D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
@@ -377,19 +371,5 @@ bool ShaderManager::SetShaderParameters()
 	//// Finally set the light constant buffer in the pixel shader with the updated values.
 	//this->m_context->PSSetConstantBuffers(bufferNumber, 1, &m_ParaBuffer);
 
-	return true;
-}
-
-void ShaderManager::Draw(UINT indexCount, UINT startIndex, INT startVertex)
-{
-	// Set the vertex input layout.
-	this->m_context->IASetInputLayout(m_layout);
-
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	this->m_context->VSSetShader(m_vertexShader, NULL, 0);
-	this->m_context->PSSetShader(m_pixelShader, NULL, 0);
-
-	// Render the triangle.
-	this->m_context->DrawIndexed(indexCount, startIndex, startVertex);
-	return;
-}
+//	return true;
+//}

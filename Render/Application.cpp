@@ -84,8 +84,9 @@ void Application::Tick(double DeltaTime)
 	m_mainViewport->Execute(DeltaTime);
 	m_world->StepPhysics(DeltaTime);
 	m_graphicsManager->Render();
+	m_mainViewport->lockRead();
 	m_world->Tick(DeltaTime);
-	m_mainViewport->resetKetAction();
+	m_mainViewport->unlockRead();
 	//LOG(L"Frame: %d", this->m_frameCount);
 }
 
@@ -117,7 +118,7 @@ bool Application::GetKeyUp(WPARAM index)
 
 bool Application::GetKeyPressed(WPARAM index)
 {
-	return m_mainViewport->GetKeyPressed(index);
+	return HIBYTE(GetKeyState(index));
 }
 
 

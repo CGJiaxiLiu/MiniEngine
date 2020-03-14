@@ -12,7 +12,9 @@ private:
 	struct VertexType
 	{
 		XMFLOAT3 position;
-		float intensity;
+		float padding;
+		XMFLOAT2 uv;
+		XMFLOAT2 padding_2;
 	};
 
 public:
