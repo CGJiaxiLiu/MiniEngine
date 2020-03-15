@@ -29,6 +29,8 @@ bool World::Initialize(class Application* inApp)
 		XMFLOAT3(halfboxSize, -halfboxSize, 0.0f)
 	};
 	boxGeo->indexData = std::vector<unsigned long>{ 0, 1, 2, 2, 3, 0 };
+	boxGeo->uv = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) };
+	boxGeo->texFileName = L"dragon.png";
 	this->AddGeometry(boxGeo);
 
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -101,6 +103,8 @@ bool World::Initialize(class Application* inApp)
 		XMFLOAT3(halfFloorWidth, halfFloorHeigh, 0.0f),
 		XMFLOAT3(halfFloorWidth, -halfFloorHeigh, 0.0f)
 	};
+	floorGeo->uv = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT2(2 * halfFloorWidth, 0.0f), XMFLOAT2(2 * halfFloorWidth, 1.0f) };
+	floorGeo->texFileName = L"brick.jpg";
 	floorGeo->indexData = std::vector<unsigned long>{ 0, 1, 2, 2, 3, 0 };
 	this->AddGeometry(floorGeo);
 	floor->geo = floorGeo;

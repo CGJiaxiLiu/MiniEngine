@@ -42,7 +42,7 @@ bool GraphicsManager::Initialize(Application* inApp, std::shared_ptr<class Viewp
 	}
 
 	m_shaderManager = std::make_shared<ShaderManager>();
-	result = m_shaderManager->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), m_viewport->GetWindowHandle());
+	result = m_shaderManager->Initialize(this->app, m_D3D->GetDevice(), m_D3D->GetDeviceContext(), m_viewport->GetWindowHandle());
 	if (!result) {
 		BOX(L"Shader Manager Initialize Fail", L"Error");
 		return false;
@@ -89,12 +89,17 @@ void GraphicsManager::Render()
 		UINT indexCount = actor->geo->indexData.size();
 		UINT startIndexLocation = 0;
 		INT startVertexLocation = actor->geo->vertexOffset;
-		ShaderManager::VSConstBuffer buffer;
-		buffer.world = worldMatrix;
-		buffer.view = m_viewMatrix;
-		buffer.projection = m_projectionMatrix;
-		buffer.color = actor->actorRenderData.color;
-		m_shaderManager->SetVSConstBuffer(&buffer);
+		ShaderManager::VSConstBuffer VSbuffer;
+		VSbuffer.world = worldMatrix;
+		VSbuffer.view = m_viewMatrix;
+		VSbuffer.projection = m_projectionMatrix;
+		VSbuffer.color = actor->actorRenderData.color;
+		m_shaderManager->SetVSConstBuffer(&VSbuffer);
+
+		ShaderManager::PSConstBuffer PSBuffer;
+		PSBuffer.index = max(m_shaderManager->GetTextureIndex(actor->geo->texFileName), 0);
+		PSBuffer.uvOffset = XMFLOAT2(app->GetRunningTime(), app->GetRunningTime());
+		m_shaderManager->SetPSConstBuffer(&PSBuffer);
 		m_shaderManager->Render(indexCount, startIndexLocation, startVertexLocation);
 	}
 	

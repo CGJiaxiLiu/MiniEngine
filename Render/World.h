@@ -4,8 +4,8 @@
 #include <DirectXMath.h>
 #include "PxPhysicsAPI.h"
 
-struct Actor;
-struct Geometry;
+class Actor;
+class Geometry;
 using namespace physx;
 using namespace DirectX;
 
@@ -22,7 +22,7 @@ public:
 	std::vector<std::shared_ptr<Actor>> GetAllActors() { return ActorList; }
 	size_t GetVertexSize();
 	size_t GetIndexSize();
-	std::vector<std::shared_ptr<Geometry>> GetGeometryData() { return GeometryList; }
+	std::vector<std::shared_ptr<Geometry>> GetGeometryList() { return GeometryList; }
 	std::shared_ptr<Actor> player = nullptr;
 
 protected:

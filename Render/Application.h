@@ -3,6 +3,7 @@
 #include <memory>
 #include <chrono>
 #include <DirectXMath.h>
+#include <vector>
 
 class Application
 {
@@ -32,6 +33,9 @@ public:
 	bool GetKeyUp(WPARAM index);
 	bool GetKeyPressed(WPARAM index);
 
+	unsigned char * LoadImageData(const WCHAR* filename, UINT& width, UINT& height);
+	inline UINT GetAtlasSize() { return this->m_atlasSize; }
+
 protected:
 	void CreateMainViewport();
 
@@ -42,6 +46,7 @@ protected:
 	unsigned int m_screenHeight = 600;
 	size_t m_frameCount = 0;
 	float screenRatio = 100;
+	unsigned int m_atlasSize = 1024;
 
 	std::chrono::system_clock::time_point timePoint_a;
 	std::chrono::system_clock::time_point timePoint_b;
@@ -49,6 +54,8 @@ protected:
 	HANDLE m_consoleHandle = 0;
 	std::shared_ptr<class GraphicsManager> m_graphicsManager = 0;
 	std::shared_ptr<class World> m_world = 0;
+
+	ULONG_PTR m_gdiplusToken;
 };
 
 static Application* instance = 0;

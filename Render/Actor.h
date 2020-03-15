@@ -15,10 +15,7 @@ public:
 	std::vector<XMFLOAT2> uv;
 	std::vector<unsigned long> indexData;
 	INT vertexOffset = 0;
-	ID3D11ShaderResourceView* m_texture = nullptr;
-
-	~Geometry();
-	bool LoadTexture(ID3D11Device* device, WCHAR* filename);
+	const WCHAR* texFileName = nullptr;
 };
 
 class Actor

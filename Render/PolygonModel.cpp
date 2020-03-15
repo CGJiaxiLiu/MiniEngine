@@ -45,15 +45,26 @@ bool PolygonModel::InitializeBuffer(ID3D11Device * device, std::shared_ptr<World
 	indexArr.reserve(m_indexCount);
 
 	INT vertexOffset = 0;
-	for (auto geo : world->GetGeometryData())
+	for (auto geo : world->GetGeometryList())
 	{
-		for (auto vec : geo->positionData)
+
+		for (int i = 0; i < geo->positionData.size(); i++)
 		{
 			VertexType temp = VertexType();
-			temp.position = vec;
-			temp.padding = 0.0f;
-			temp.uv = XMFLOAT2(0.0f, 0.0f);
-			temp.padding_2 = XMFLOAT2(0.0f, 0.0f);
+			temp.position = geo->positionData[i];
+			temp.padding = 0.5f;
+
+			if (i < geo->uv.size())
+			{
+				temp.uv = geo->uv[i];
+				//LOG(L"Add UV %f %f", temp.uv.x, temp.uv.y);
+			}
+			else
+			{
+				temp.uv = XMFLOAT2(1.0f, 1.0f);
+			}
+
+			temp.padding_2 = XMFLOAT2(0.5f, 0.5f);
 			vectexArr.push_back(temp);
 		}
 
@@ -61,35 +72,13 @@ bool PolygonModel::InitializeBuffer(ID3D11Device * device, std::shared_ptr<World
 		{
 			indexArr.push_back(index);
 		}
+
 		geo->vertexOffset = vertexOffset;
 		vertexOffset += geo->positionData.size();
 	}
 
 	LOG(L"vertex count: %d", vectexArr.size());
 	LOG(L"index count: %d", indexArr.size());
-
-	//m_vertexCount = 6;
-	//m_indexCount = 6;
-	//vectexArr.resize(m_vertexCount);
-	//indexArr.resize(m_indexCount);
-	//vectexArr[0].position = D3DXVECTOR3(-1.0f, -1.0f, 0.5f);
-	//vectexArr[0].intensity = 1.0f;
-	//vectexArr[1].position = D3DXVECTOR3(-1.0f, 1.0f, 0.5f);
-	//vectexArr[1].intensity = 1.0f;
-	//vectexArr[2].position = D3DXVECTOR3(1.0f, -1.0f, 0.5f);
-	//vectexArr[2].intensity = 1.0f;
-	//vectexArr[3].position = D3DXVECTOR3(-0.5f, -0.50f, 0.0f);
-	//vectexArr[3].intensity = -1.0f;
-	//vectexArr[4].position = D3DXVECTOR3(-0.5f, 0.5f, 0.0f);
-	//vectexArr[4].intensity = -1.0f;
-	//vectexArr[5].position = D3DXVECTOR3(0.5f, -0.5f, 0.0f);
-	//vectexArr[5].intensity = -1.0f;
-	//indexArr[0] = 0;  // Bottom left.
-	//indexArr[1] = 1;  // Top middle.
-	//indexArr[2] = 2;  // Bottom right.
-	//indexArr[3] = 3;  // Bottom left.
-	//indexArr[4] = 4;  // Top middle.
-	//indexArr[5] = 5;  // Bottom right.
 
 	// Set up the description of the static vertex buffer.
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;

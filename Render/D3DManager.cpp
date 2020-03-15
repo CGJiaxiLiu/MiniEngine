@@ -75,7 +75,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create the swap chain, Direct3D device, and Direct3D device context.
-	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1,
+	result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, &featureLevel, 1,
 		D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext);
 	if (FAILED(result))
 	{
@@ -113,7 +113,6 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	customBufferDesc.MipLevels = 1;
 	customBufferDesc.ArraySize = 1;
 	customBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UINT;
-	////customBufferDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	customBufferDesc.SampleDesc.Count = 1;
 	customBufferDesc.SampleDesc.Quality = 0;
 	customBufferDesc.Usage = D3D11_USAGE_STAGING;
@@ -125,7 +124,7 @@ bool D3DManager::Initialize(std::shared_ptr<class Viewport> inViewport)
 	result = m_device->CreateTexture2D(&customBufferDesc, NULL, &m_customBuffer);
 	if (FAILED(result))
 	{
-		BOX(D3DErrorParse(result), L"Error");
+		BOX(D3DErrorParse(result), L"Error2");
 		return false;
 	}
 

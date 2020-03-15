@@ -1,16 +1,29 @@
 #include "ShaderManager.h"
 #include "util.h"
+#include "World.h"
+#include "Application.h"
+#include "Actor.h"
 
 ShaderManager::ShaderManager()
 {
 }
 
-bool ShaderManager::Initialize(ID3D11Device * device, ID3D11DeviceContext* context, HWND hwnd)
+bool ShaderManager::Initialize(class Application* inApp, ID3D11Device * device, ID3D11DeviceContext* context, HWND hwnd)
 {
 	bool result;
 	this->m_context = context;
+	this->app = inApp;
+	this->texIndexMap = std::unordered_map<const WCHAR*, UINT>();
+	this->texNameList = std::vector<const WCHAR*>();
+
 	// Initialize the vertex and pixel shaders.
 	result = InitializeShader(device, hwnd, L"color.vs", L"color.ps");
+	if (!result)
+	{
+		return false;
+	}
+
+	result = LoadResource(device, this->app->GetWorld());
 	if (!result)
 	{
 		return false;
@@ -84,12 +97,22 @@ bool ShaderManager::SetPSConstBuffer(PSConstBuffer * inData)
 
 bool ShaderManager::Render(UINT indexCount, UINT startIndex, INT startVertex)
 {
-	bool result;
-
 	// Now render the prepared buffers with the shader.
 	Draw(indexCount, startIndex, startVertex);
 
 	return true;
+}
+
+int ShaderManager::GetTextureIndex(const WCHAR * name)
+{
+	if (texIndexMap.count(name) == 1)
+	{
+		return texIndexMap[name];
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHAR* vsFilename, const WCHAR* psFilename)
@@ -100,8 +123,8 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 	ID3D10Blob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
-	D3D11_BUFFER_DESC matrixBufferDesc;
-	D3D11_BUFFER_DESC paraBufferDesc;
+	D3D11_BUFFER_DESC VSBufferDesc;
+	D3D11_BUFFER_DESC PSBufferDesc;
 
 	// Initialize the pointers this function will use to null.
 	errorMessage = 0;
@@ -202,34 +225,156 @@ bool ShaderManager::InitializeShader(ID3D11Device* device, HWND hwnd, const WCHA
 	pixelShaderBuffer = 0;
 
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(VSConstBuffer);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.MiscFlags = 0;
-	matrixBufferDesc.StructureByteStride = 0;
+	VSBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	VSBufferDesc.ByteWidth = sizeof(VSConstBuffer);
+	VSBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	VSBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	VSBufferDesc.MiscFlags = 0;
+	VSBufferDesc.StructureByteStride = 0;
 
 	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = device->CreateBuffer(&matrixBufferDesc, NULL, &m_VSConstBuffer);
+	result = device->CreateBuffer(&VSBufferDesc, NULL, &m_VSConstBuffer);
 	if (FAILED(result))
 	{
 		BOX(D3DErrorParse(result), L"Shader Manager Error 3");
 		return false;
 	}
 
-	paraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	paraBufferDesc.ByteWidth = sizeof(PSConstBuffer);
-	paraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	paraBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	paraBufferDesc.MiscFlags = 0;
-	paraBufferDesc.StructureByteStride = 0;
+	PSBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	PSBufferDesc.ByteWidth = sizeof(PSConstBuffer);
+	PSBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	PSBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	PSBufferDesc.MiscFlags = 0;
+	PSBufferDesc.StructureByteStride = 0;
 
-	result = device->CreateBuffer(&paraBufferDesc, NULL, &m_PSConstBuffer);
+	result = device->CreateBuffer(&PSBufferDesc, NULL, &m_PSConstBuffer);
 	if (FAILED(result))
 	{
 		BOX(D3DErrorParse(result), L"Shader Manager Error 4");
 		return false;
 	}
+
+	D3D11_SAMPLER_DESC samplerDesc;
+	// Create a texture sampler state description.
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0;
+	samplerDesc.BorderColor[1] = 0;
+	samplerDesc.BorderColor[2] = 0;
+	samplerDesc.BorderColor[3] = 0;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Create the texture sampler state.
+	result = device->CreateSamplerState(&samplerDesc, &m_sampleState);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+
+	LOG(L"Shader Compile Success");
+	return true;
+}
+
+bool ShaderManager::LoadResource(ID3D11Device * device, std::shared_ptr<class World> world)
+{
+	int texCount = 0;
+
+	for (auto geo : world->GetGeometryList())
+	{
+		const WCHAR* imgName = geo->texFileName;
+
+		if (!imgName || texIndexMap.count(imgName) == 1)
+		{
+			continue;
+		}
+
+		texIndexMap[imgName] = texCount;
+		texNameList.push_back(imgName);
+		LOG(L"Find Tex %d", texCount);
+
+		texCount++;
+
+	}
+	
+	if (texCount == 0)
+	{
+		return true;
+	}
+
+	D3D11_TEXTURE2D_DESC sTexDesc;
+	sTexDesc.Width = app->GetAtlasSize();
+	sTexDesc.Height = app->GetAtlasSize();
+	sTexDesc.MipLevels = 1;
+	sTexDesc.ArraySize = texCount;
+	sTexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	sTexDesc.SampleDesc.Count = 1;
+	sTexDesc.SampleDesc.Quality = 0;
+	sTexDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	sTexDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	sTexDesc.CPUAccessFlags = 0;
+	sTexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA *sSubData = new D3D11_SUBRESOURCE_DATA[texCount];
+	//std::vector<std::vector<unsigned char>> dataList = std::vector<std::vector<unsigned char>>();
+
+	for (int i = 0; i < texCount; i++) {
+
+		UINT width, height;
+
+		auto buffer_ = app->LoadImageData(texNameList[i], width, height);
+		//dataList.push_back(buffer_);
+
+		if (width != app->GetAtlasSize() || height != app->GetAtlasSize())
+		{
+			BOX(L"Texture Size Incorret", L"Shader Manager Load Resource ERROR 0");
+			return false;
+		}
+		LOG(L"Load Tex %d", i);
+
+		sSubData[i].pSysMem = buffer_;
+		sSubData[i].SysMemPitch = (UINT)(app->GetAtlasSize() * 4);
+		sSubData[i].SysMemSlicePitch = (UINT)(app->GetAtlasSize() * app->GetAtlasSize() * 4);
+	}
+
+	ID3D11Texture2D* pTexture;
+
+	LOG(L"Before Texture2d Create %d", texCount);
+
+	auto result = device->CreateTexture2D(&sTexDesc, sSubData, &pTexture);
+	delete[] sSubData;
+
+	if (FAILED(result))
+	{
+		BOX(D3DErrorParse(result), L"Shader Manager Load Resource ERROR 2");
+		return false;
+	}
+
+	LOG(L"Create Texture2d Success");
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC  SRVDesc;
+	SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SRVDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2DARRAY;
+	SRVDesc.Texture2DArray.ArraySize = texCount;
+	SRVDesc.Texture2DArray.FirstArraySlice = 0;
+	SRVDesc.Texture2DArray.MipLevels = 1;
+	SRVDesc.Texture2DArray.MostDetailedMip = 0;
+
+	result = device->CreateShaderResourceView(pTexture, &SRVDesc, &m_SRV);
+
+	if (FAILED(result))
+	{
+		BOX(D3DErrorParse(result), L"Shader Manager Load Resource ERROR 2");
+		return false;
+	}
+
+	this->m_context->PSSetShaderResources(0, 1, &m_SRV);
 
 	return true;
 }
@@ -268,6 +413,12 @@ void ShaderManager::DestroyShader()
 	{
 		m_vertexShader->Release();
 		m_vertexShader = 0;
+	}
+
+	if (m_sampleState)
+	{
+		m_sampleState->Release();
+		m_sampleState = 0;
 	}
 }
 
@@ -312,6 +463,7 @@ void ShaderManager::Draw(UINT indexCount, UINT startIndex, INT startVertex)
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	this->m_context->VSSetShader(m_vertexShader, NULL, 0);
 	this->m_context->PSSetShader(m_pixelShader, NULL, 0);
+	this->m_context->PSSetSamplers(0, 1, &m_sampleState);
 
 	// Render the triangle.
 	this->m_context->DrawIndexed(indexCount, startIndex, startVertex);

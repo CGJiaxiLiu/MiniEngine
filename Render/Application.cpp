@@ -6,6 +6,9 @@
 #include "Viewport.h"
 #include "GraphicsManager.h"
 #include "World.h"
+#pragma comment( lib, "gdiplus.lib" ) 
+#include <gdiplus.h> 
+using namespace Gdiplus;
 
 Application::Application()
 {
@@ -26,6 +29,9 @@ void Application::Initialize()
 	}
 #endif // !DEBUG
 
+	// Start Gdiplus 
+	GdiplusStartupInput gdiplusStartupInput;
+	GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
 
 	m_world = std::make_shared<World>();
 	m_world->Initialize(this);
@@ -39,7 +45,6 @@ void Application::Initialize()
 		D3DErrorParse(result);
 		m_mainViewport->CalledToDestroy();
 	}
-
 
 }
 
@@ -64,6 +69,8 @@ void Application::MainLoop()
 void Application:: Destroy()
 {
 	instance = nullptr;
+
+	// Shutdown Gdiplus 
 
 	if (m_mainViewport) {
 		m_mainViewport->Destroy();
@@ -119,6 +126,71 @@ bool Application::GetKeyUp(WPARAM index)
 bool Application::GetKeyPressed(WPARAM index)
 {
 	return HIBYTE(GetKeyState(index));
+}
+
+unsigned char* Application::LoadImageData(const WCHAR * filename, UINT& width, UINT& height)
+{
+
+	GdiplusStartupInput gdiplusStartupInput;
+	GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
+
+	Bitmap * img = Gdiplus::Bitmap::FromFile(filename);
+
+	if (!img)
+	{
+		BOX(L"Image Load Fail", filename);
+		width = 0;
+		height = 0;
+		return nullptr;
+	}
+
+	width = img->GetWidth();
+	height = img->GetHeight();
+
+	//LOG(L"Width %d", width);
+	//LOG(L"Height %d", height);
+
+	Gdiplus::BitmapData bitmapData;
+	size_t len = img->GetWidth() * img->GetHeight() * 4;
+	unsigned char * buffer_ = new unsigned char[len];
+
+	img->LockBits(&Rect(0, 0, img->GetWidth(), img->GetHeight()), Gdiplus::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+
+	if (len = bitmapData.Stride * bitmapData.Height)
+	{
+		memcpy(buffer_, bitmapData.Scan0, len);
+	}
+	else
+	{
+		for (int i = 0; i < bitmapData.Height; i++)
+		{
+			memcpy(buffer_ + i * 4 * img->GetWidth(), (unsigned char*)bitmapData.Scan0 + bitmapData.Stride * i,  img->GetWidth() * 4);
+		}
+	}
+
+	img->UnlockBits(&bitmapData);
+
+
+
+	//UINT index = 0;
+	//for (int i = 0; i < width; i++)
+	//{
+	//	for (int j = 0; j < height; j++)
+	//	{
+	//		Color c;
+	//		img->GetPixel(j, i, &c);
+	//		buffer_[index++] = c.GetR();
+	//		buffer_[index++] = c.GetG();
+	//		buffer_[index++] = c.GetB();
+	//		buffer_[index++] = c.GetA();
+	//	}
+	//}
+
+	GdiplusShutdown(m_gdiplusToken);
+
+	delete img;
+	img = 0;
+	return buffer_;
 }
 
 

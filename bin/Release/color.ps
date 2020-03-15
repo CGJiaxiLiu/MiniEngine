@@ -4,6 +4,8 @@ SamplerState SampleType;
 cbuffer ParaBuffer
 {
 	int index;
+	float2 uvOffset;
+	float padding;
 };
 
 struct PixelInputType
@@ -15,5 +17,7 @@ struct PixelInputType
 
 float4 ColorPixelShader(PixelInputType input) : SV_TARGET
 {
-	return TextureArray.Sample(SampleType, float3(input.tex.x, input.tex.y, index));
+	float4 color =  TextureArray.Sample(SampleType, float3(input.tex.x + uvOffset.x, input.tex.y + uvOffset.y, index));
+	return color;
+	//return float4(color.z, color.y, color.x, 1.0f);
 }
