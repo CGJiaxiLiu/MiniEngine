@@ -15,11 +15,11 @@ Some fundamental functionality of a game engine, i.e. graphics, physics and game
  - User input
  - Game Framework
    - Class design
-   
+   - Sprite Animation
 
 ## 
 Some feature todo:
- - Sprite Animation
+ - Transparency
  - 2D lighting
  - UI framework
  - Auto navigation
