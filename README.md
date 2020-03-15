@@ -19,6 +19,7 @@ Some fundamental functionality of a game engine, i.e. graphics, physics and game
 
 ## 
 Some feature todo:
+ - Editor
  - Transparency
  - 2D lighting
  - UI framework
