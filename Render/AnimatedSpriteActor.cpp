@@ -1,12 +1,18 @@
 #include "AnimatedSpriteActor.h"
 
 
-
-AnimatedSpriteActor::AnimatedSpriteActor()
+void AnimatedSpriteActor::Tick(double DeltaDeltaTime)
 {
-}
+	Actor::Tick(DeltaDeltaTime);
 
+	progress += DeltaDeltaTime / cycle;
 
-AnimatedSpriteActor::~AnimatedSpriteActor()
-{
+	if (progress >= 1)
+	{
+		progress -= 1.0f;
+	}
+
+	index = (UINT)(progress * step);
+
+	this->geo->uvOffset = uvOffsetList[index];
 }

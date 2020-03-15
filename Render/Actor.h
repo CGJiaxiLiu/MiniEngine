@@ -13,6 +13,7 @@ class Geometry
 public:
 	std::vector<XMFLOAT3> positionData;
 	std::vector<XMFLOAT2> uv;
+	XMFLOAT2 uvOffset = XMFLOAT2(0.0f, 0.0f);
 	std::vector<unsigned long> indexData;
 	INT vertexOffset = 0;
 	const WCHAR* texFileName = nullptr;

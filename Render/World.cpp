@@ -5,6 +5,7 @@
 #include "Application.h"
 #include "Viewport.h"
 #include "util.h"
+#include "AnimatedSpriteActor.h"
 
 PxDefaultAllocator gAllocator;
 PxDefaultErrorCallback gErrorCallback;
@@ -29,8 +30,8 @@ bool World::Initialize(class Application* inApp)
 		XMFLOAT3(halfboxSize, -halfboxSize, 0.0f)
 	};
 	boxGeo->indexData = std::vector<unsigned long>{ 0, 1, 2, 2, 3, 0 };
-	boxGeo->uv = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) };
-	boxGeo->texFileName = L"dragon.png";
+	boxGeo->uv = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 0.25f), XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.25f, 0.0f), XMFLOAT2(0.25f, 0.25f) };
+	boxGeo->texFileName = L"bom.png";
 	this->AddGeometry(boxGeo);
 
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -44,9 +45,12 @@ bool World::Initialize(class Application* inApp)
 	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.2f);
 
 	PxShape* boxShape = gPhysics->createShape(PxBoxGeometry(halfboxSize, halfboxSize, halfboxSize), *gMaterial);
-	std::shared_ptr<Actor> actor0 = std::make_shared<Actor>();
+	std::shared_ptr<AnimatedSpriteActor> actor0 = std::make_shared<AnimatedSpriteActor>();
 	XMMATRIX actorTransform = XMMatrixTranslation(0, 0, 0);
 	actor0->geo = boxGeo;
+	actor0->cycle = 1.0f;
+	actor0->step = 8;
+	actor0->uvOffsetList = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.25f, 0.0f), XMFLOAT2(0.5f, 0.0f), XMFLOAT2(0.75f, 0.0f), XMFLOAT2(0.0f, 0.25f), XMFLOAT2(0.25f, 0.25f), XMFLOAT2(0.5f, 0.25f), XMFLOAT2(0.75f, 0.25f) };
 	actor0->transformation = actorTransform;
 	this->AddActor(actor0);
 
@@ -162,6 +166,7 @@ void World::Tick(double DeltaTime)
 
 	for (auto actor : this->ActorList)
 	{
+		actor->Tick(DeltaTime);
 		if (actor->physicsProxy /*&& static_cast<PxRigidDynamic*>(actor->physicsProxy)*/)
 		{
 			actor->actorRenderData.color = XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f);

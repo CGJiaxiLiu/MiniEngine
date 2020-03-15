@@ -98,7 +98,7 @@ void GraphicsManager::Render()
 
 		ShaderManager::PSConstBuffer PSBuffer;
 		PSBuffer.index = max(m_shaderManager->GetTextureIndex(actor->geo->texFileName), 0);
-		PSBuffer.uvOffset = XMFLOAT2(app->GetRunningTime(), app->GetRunningTime());
+		PSBuffer.uvOffset = actor->geo->uvOffset;
 		m_shaderManager->SetPSConstBuffer(&PSBuffer);
 		m_shaderManager->Render(indexCount, startIndexLocation, startVertexLocation);
 	}
