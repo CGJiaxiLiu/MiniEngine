@@ -6,6 +6,7 @@
 #include "Viewport.h"
 #include "util.h"
 #include "AnimatedSpriteActor.h"
+#include "CameraActor.h"
 
 PxDefaultAllocator gAllocator;
 PxDefaultErrorCallback gErrorCallback;
@@ -29,6 +30,7 @@ bool World::Initialize(class Application* inApp)
 		XMFLOAT3(halfboxSize, halfboxSize, 0.0f),
 		XMFLOAT3(halfboxSize, -halfboxSize, 0.0f)
 	};
+
 	boxGeo->indexData = std::vector<unsigned long>{ 0, 1, 2, 2, 3, 0 };
 	boxGeo->uv = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 0.25f), XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.25f, 0.0f), XMFLOAT2(0.25f, 0.25f) };
 	boxGeo->texFileName = L"bom.png";
@@ -48,6 +50,7 @@ bool World::Initialize(class Application* inApp)
 	std::shared_ptr<AnimatedSpriteActor> actor0 = std::make_shared<AnimatedSpriteActor>();
 	XMMATRIX actorTransform = XMMatrixTranslation(0, 0, 0);
 	actor0->geo = boxGeo;
+	actor0->SetWorld(this);
 	actor0->cycle = 1.0f;
 	actor0->step = 8;
 	actor0->uvOffsetList = std::vector<XMFLOAT2>{ XMFLOAT2(0.0f, 0.0f), XMFLOAT2(0.25f, 0.0f), XMFLOAT2(0.5f, 0.0f), XMFLOAT2(0.75f, 0.0f), XMFLOAT2(0.0f, 0.25f), XMFLOAT2(0.25f, 0.25f), XMFLOAT2(0.5f, 0.25f), XMFLOAT2(0.75f, 0.25f) };
@@ -72,7 +75,10 @@ bool World::Initialize(class Application* inApp)
 		body->setMaxDepenetrationVelocity(PX_MAX_F32);
 		actor0->physicsProxy = body;
 		body->setRigidDynamicLockFlags(PxRigidDynamicLockFlag::eLOCK_LINEAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Z | PxRigidDynamicLockFlag::eLOCK_ANGULAR_X | PxRigidDynamicLockFlag::eLOCK_ANGULAR_Y);
-		player = actor0;
+		this->player = actor0;
+		this->camera = std::make_shared<CameraActor>(actor0);
+		this->camera->SetWorld(this);
+		this->AddActor(this->camera);
 	}
 	else
 	{
@@ -122,6 +128,12 @@ bool World::Initialize(class Application* inApp)
 
 	boxShape->release();
 	floorShape->release();
+
+	for (auto a : this->ActorList)
+	{
+		a->SetWorld(this);
+	}
+
 	return true;
 }
 
@@ -147,27 +159,28 @@ void World::Tick(double DeltaTime)
 		gScene->fetchResults(true);
 	}
 
-	if (app->GetKeyDown(VK_UP))
-	{
-		LOG(L"Frame: %zd, (UP) KEY DOWN", app->GetFrameCount());
-	}
-	if (app->GetKeyUp(VK_UP))
-	{
-		LOG(L"Frame: %zd, (UP) KEY UP", app->GetFrameCount());
-	}
-	if (app->GetKeyDown(VK_DOWN))
-	{
-		LOG(L"Frame: %zd, (DOWN) KEY DOWN", app->GetFrameCount());
-	}
-	if (app->GetKeyUp(VK_DOWN))
-	{
-		LOG(L"Frame: %zd, (DOWN) KEY UP", app->GetFrameCount());
-	}
+	//if (app->GetKeyDown(VK_UP))
+	//{
+	//	LOG(L"Frame: %zd, (UP) KEY DOWN", app->GetFrameCount());
+	//}
+	//if (app->GetKeyUp(VK_UP))
+	//{
+	//	LOG(L"Frame: %zd, (UP) KEY UP", app->GetFrameCount());
+	//}
+	//if (app->GetKeyDown(VK_DOWN))
+	//{
+	//	LOG(L"Frame: %zd, (DOWN) KEY DOWN", app->GetFrameCount());
+	//}
+	//if (app->GetKeyUp(VK_DOWN))
+	//{
+	//	LOG(L"Frame: %zd, (DOWN) KEY UP", app->GetFrameCount());
+	//}
 
 	for (auto actor : this->ActorList)
 	{
 		actor->Tick(DeltaTime);
-		if (actor->physicsProxy /*&& static_cast<PxRigidDynamic*>(actor->physicsProxy)*/)
+
+		if (actor->GetHasPhysics())
 		{
 			actor->actorRenderData.color = XMFLOAT4(0.0f, 0.0f, 1.0f, 0.0f);
 			auto physics_pos = actor->physicsProxy->getGlobalPose().p;

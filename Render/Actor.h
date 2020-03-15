@@ -7,6 +7,7 @@
 
 using namespace physx;
 using namespace DirectX;
+class World;
 
 class Geometry
 {
@@ -28,11 +29,18 @@ public:
 	PxRigidActor* physicsProxy;
 	GraphicsManager::PerActorData actorRenderData;
 
-	Actor()
-	{
-		this->actorRenderData.color = XMFLOAT4(0.0f, 1.0f, 1.0f, 0.0f);
-	}
-
+	Actor();
+	Actor(World* inWorld);
 	virtual void Initialize() {};
 	virtual void Tick(double DeltaTime) {};
+	inline void SetWorld(World* inWorld) { m_world = inWorld; }
+	inline World* GetWorld() { return m_world; }
+	inline bool GetHasPhysics() { return this->bHasPhysicsProxy; }
+	inline bool GetIsRendered() { return this->bIsRendered; }
+	XMVECTOR GetPosition();
+
+protected:
+	World* m_world = 0;
+	bool bHasPhysicsProxy = true;
+	bool bIsRendered = true;
 };

@@ -8,7 +8,7 @@
 
 void _Log(const wchar_t * Format, ...)
 {
-	auto instance = GetInstance();
+	auto instance = GetAppInstance();
 	if (instance) {
 		//va_list args;
 		//va_start(args, Format);
@@ -26,7 +26,7 @@ void _Log(const wchar_t * Format, ...)
 
 float _RunTime()
 {
-	auto instance = GetInstance();
+	auto instance = GetAppInstance();
 	if (instance) {
 		return instance->GetRunningTime();
 	}
@@ -37,7 +37,7 @@ float _RunTime()
 
 void _AriseMessageBox(const wchar_t * Content, const wchar_t * Title)
 {
-	auto instance = GetInstance();
+	auto instance = GetAppInstance();
 	if (instance) {
 		if (instance->m_mainViewport) {
 			MessageBox(instance->m_mainViewport->GetWindowHandle(), Content, Title, MB_OK);

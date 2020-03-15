@@ -16,3 +16,13 @@ void AnimatedSpriteActor::Tick(double DeltaDeltaTime)
 
 	this->geo->uvOffset = uvOffsetList[index];
 }
+
+AnimatedSpriteActor::AnimatedSpriteActor()
+{
+	Actor::Actor();
+}
+
+AnimatedSpriteActor::AnimatedSpriteActor(World * inWorld)
+{
+	Actor::Actor(inWorld);
+}

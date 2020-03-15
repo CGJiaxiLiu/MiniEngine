@@ -1,11 +1,13 @@
 #pragma once
 #include "Actor.h"
 
-class AnimatedSpriteActor :
-	public Actor
+class AnimatedSpriteActor : public Actor
 {
 public:
 	virtual void Tick(double DeltaDeltaTime) override;
+
+	AnimatedSpriteActor();
+	AnimatedSpriteActor(World* inWorld);
 
 	float cycle = 1.0f;
 	UINT step = 1;

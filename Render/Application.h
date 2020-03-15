@@ -59,4 +59,4 @@ protected:
 };
 
 static Application* instance = 0;
-Application* GetInstance();
+Application* GetAppInstance();

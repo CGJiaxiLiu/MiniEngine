@@ -226,7 +226,7 @@ void Application::LogOnConsole(const wchar_t * text, ...)
 
 }
 
-Application * GetInstance()
+Application * GetAppInstance()
 {
 	return instance; 
 }
